@@ -1,0 +1,1314 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, Check, Zap, Users, Trophy, Menu, X, Eye, EyeOff, Copy, Download, Share2
+export default function POMANComplete() {
+// ============ STATE MANAGEMENT ============
+const [selectedTier, setSelectedTier] = useState(null);
+const [formData, setFormData] = useState({
+fullName: '',
+email: '',
+phone: '',
+state: '',
+interest: '',
+message: ''
+});
+const [isSubmitted, setIsSubmitted] = useState(false);
+const [formStep, setFormStep] = useState(1);
+const [scrollY, setScrollY] = useState(0);
+const [loading, setLoading] = useState(false);
+const [errors, setErrors] = useState({});
+const [showTerms, setShowTerms] = useState(false);
+const [termsAccepted, setTermsAccepted] = useState(false);
+const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const [showShareModal, setShowShareModal] = useState(false);
+const [showAdminPanel, setShowAdminPanel] = useState(false);
+const [adminPasswordInput, setAdminPasswordInput] = useState('');
+const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+const [referralCode, setReferralCode] = useState('POMAN' + Math.random().toString(36).subst
+const [members, setMembers] = useState([]);
+const [expandedFaq, setExpandedFaq] = useState(null);
+// Initialize EmailJS
+useEffect(() => {
+const script = document.createElement('script');
+script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/index.min.js';
+script.onload = () => {
+if (typeof window.emailjs !== 'undefined') {
+window.emailjs.init("ZLl3f2SRtiFRqiTfd");
+}
+};
+if (!document.querySelector('script[src*="emailjs"]')) {
+document.head.appendChild(script);
+}
+}, []);
+useEffect(() => {
+const handleScroll = () => setScrollY(window.scrollY);
+window.addEventListener('scroll', handleScroll);
+return () => window.removeEventListener('scroll', handleScroll);
+}, []);
+// ============ FORM VALIDATION ============
+const validateForm = () => {
+const newErrors = {};
+if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+if (!formData.email.trim()) newErrors.email = 'Email is required';
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email
+if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+if (!/^(\+234|0)[0-9]{10}$/.test(formData.phone.replace(/\s/g, ''))) newErrors.phone = 'I
+if (!formData.state.trim()) newErrors.state = 'State is required';
+if (!formData.interest) newErrors.interest = 'Please select an area of interest';
+if (selectedTierData.id === 'founder' && !formData.message.trim()) newErrors.message = 'P
+if (!termsAccepted) newErrors.terms = 'You must accept the terms and conditions';
+setErrors(newErrors);
+return Object.keys(newErrors).length === 0;
+};
+// ============ ADMIN PASSWORD HANDLER ============
+const handleAdminLogin = (e) => {
+e.preventDefault();
+if (adminPasswordInput === 'POMAN2024') {
+setAdminAuthenticated(true);
+setAdminPasswordInput('');
+} else {
+alert(' Incorrect password. Try again.');
+setAdminPasswordInput('');
+}
+};
+const handleAdminLogout = () => {
+setAdminAuthenticated(false);
+setShowAdminPanel(false);
+setAdminPasswordInput('');
+};
+const handleInputChange = (e) => {
+const { name, value } = e.target;
+setFormData(prev => ({ ...prev, [name]: value }));
+if (errors[name]) {
+setErrors(prev => ({ ...prev, [name]: '' }));
+}
+};
+// ============ FORM SUBMISSION ============
+const handleSubmit = async (e) => {
+e.preventDefault();
+if (!validateForm()) {
+return;
+}
+setLoading(true);
+try {
+if (typeof window.emailjs !== 'undefined') {
+let templateId = selectedTier === 'supporter' ? 'template_k2bduel' : 'template_ztxryg
+let tierDescription = selectedTier === 'supporter'
+? 'Free access to community'
+: selectedTier === 'founder'
+? 'Founder Member Application - ₦1,500,000 lifetime investment'
+: selectedTierData.price + ' ' + (selectedTierData.period || '');
+await window.emailjs.send('service_nluwzrh', templateId, {
+full_name: formData.fullName,
+email: formData.email,
+phone: formData.phone,
+state: formData.state,
+interest: formData.interest,
+tier_name: selectedTierData.name,
+tier_description: tierDescription,
+message: formData.message || 'No message provided',
+referral_code: referralCode,
+to_email: formData.email
+});
+}
+// Store member data
+const newMember = {
+id: Math.random().toString(36).substring(7),
+...formData,
+tier: selectedTierData.name,
+date: new Date().toLocaleDateString(),
+referralCode
+};
+setMembers([...members, newMember]);
+setIsSubmitted(true);
+setTimeout(() => setFormStep(3), 500);
+} catch (error) {
+console.error('Error:', error);
+setErrors({ submit: 'There was an error submitting your form. Please try again.' });
+} finally {
+setLoading(false);
+}
+};
+// ============ DATA & CONFIG ============
+const tiers = [
+{
+id: 'supporter',
+name: 'Supporter',
+icon: ' ',
+price: 'Free',
+accent: 'from-emerald-500 to-teal-500',
+description: 'Start your journey',
+features: ['Weekly updates', 'Community access', 'Share content', 'Join events', 'Digit
+cta: 'Get Started',
+popular: false
+},
+{
+id: 'active',
+name: 'Active Member',
+icon: ' ',
+price: '₦25,000',
+period: '/year',
+accent: 'from-blue-500 to-indigo-500',
+description: 'Amplify your impact',
+features: ['Everything in Supporter', 'Vote on decisions', 'Exclusive content', 'Member
+cta: 'Choose Plan',
+popular: false,
+squadLink: 'https://pay.squadco.com/TMFHR3'
+},
+{
+id: 'ambassador',
+name: 'Ambassador',
+icon: ' ',
+price: '₦60,000',
+period: '/year',
+accent: 'from-amber-500 to-orange-500',
+description: 'Lead the movement',
+features: ['Everything in Active', 'Speaking opportunities', 'Leadership role', 'Conten
+cta: 'Choose Plan',
+popular: true,
+squadLink: 'https://pay.squadco.com/P364TH'
+},
+{
+id: 'founder',
+name: 'Founder Member',
+icon: ' ',
+price: '₦1,500,000',
+period: 'lifetime',
+accent: 'from-yellow-400 to-amber-500',
+description: 'Legacy status',
+features: ['Everything for lifetime', 'Founder badge', 'Leadership council', 'Private e
+cta: 'Apply Now',
+popular: false,
+limited: true,
+squadLink: 'https://pay.squadco.com/FOUNDER'
+}
+];
+const interests = ['Leadership Development', 'Policy & Governance', 'Community Organizing',
+// ============ REFERRAL BADGE SYSTEM ============
+const badgeSystem = {
+communityBuilder: {
+name: 'Community Builder',
+icon: ' ',
+points: 10,
+color: 'from-emerald-500 to-teal-500',
+requirements: '1 Active Member OR 10 Supporters',
+benefits: [
+'Badge on profile',
+'Listed in Monthly Community Builders',
+'Community Builder WhatsApp group access',
+'Monthly recognition email',
+'10% discount on renewals',
+'Exclusive digital certificate'
+]
+},
+movementChampion: {
+name: 'Movement Champion',
+icon: ' ',
+points: 50,
+color: 'from-blue-500 to-indigo-500',
+requirements: '2 Ambassadors OR 5 Active Members',
+benefits: [
+'All Community Builder benefits',
+'Priority event access',
+'Monthly 1-on-1 with leadership (30 min)',
+'Featured on website as Top Recruiter',
+'Early access to campaigns & strategy',
+'Leadership Circle access',
+'20% discount on all services',
+'Physical badge + digital certificate',
+'Monthly social media feature @POMANOrigin'
+]
+},
+eliteRecruiter: {
+name: 'Elite Recruiter',
+icon: ' ',
+points: 100,
+color: 'from-yellow-500 to-amber-500',
+requirements: '4 Ambassadors OR 2 Founders',
+benefits: [
+'All Movement Champion benefits',
+'1 FREE Ambassador upgrade (₦60K value)',
+'Leadership Council seat - vote on decisions',
+'Personal senior leader as mentor',
+'Featured in #POMAN podcast',
+'Co-create campaigns with team',
+'Speaking opportunities at events',
+'Regional coordinator position',
+'Newsletter spotlight monthly',
+'VIP exclusive events & dinners',
+'30% discount on all services',
+'Physical trophy + digital certificate'
+]
+},
+legendary: {
+name: 'Legendary',
+icon: ' ',
+points: 250,
+color: 'from-purple-500 to-pink-500',
+requirements: '5+ Founders OR 10+ Ambassadors',
+benefits: [
+'All Elite Recruiter benefits',
+'LIFETIME FREE Ambassador status (unlimited)',
+'Co-Founder status - listed officially',
+'Direct policy & strategy influence',
+'5% revenue share from your referrals (passive income)',
+'Global media recognition',
+'Endowment/Fund named after you',
+'Hall of Fame permanent feature',
+'Cabinet member - leadership meetings',
+'Documentary feature',
+'Annual exclusive gala invitation',
+'Complete free access to all tiers',
+'Presidential-level recognition'
+]
+}
+};
+const referralPointSystem = [
+{ tier: 'Supporter', icon: ' ', points: 1, color: 'text-emerald-400' },
+{ tier: 'Active Member', icon: ' ', points: 10, color: 'text-blue-400' },
+{ tier: 'Ambassador', icon: ' ', points: 25, color: 'text-amber-400' },
+{ tier: 'Founder', icon: ' ', points: 50, color: 'text-yellow-400' }
+];
+const faqs = [
+{ q: 'What is #POMAN?', a: '#POMAN is Peter Obi\'s Movement for an Authentic Nation - a g
+{ q: 'Is there a membership fee?', a: 'Supporter tier is completely free. Active Member c
+{ q: 'How long does payment take?', a: 'Squad payments are instant. You\'ll receive confi
+{ q: 'Can I change my tier?', a: 'Yes! Contact us at pomanmovement@proton.me to upgrade o
+{ q: 'Do you offer refunds?', a: 'Refund policy is case-by-case. Contact our support team
+{ q: 'How do I contact support?', a: 'Email us at pomanmovement@proton.me or message us o
+];
+const testimonials = [
+{ name: 'Chioma A.', tier: 'Ambassador', text: 'Being part of #POMAN has transformed how
+{ name: 'Kunle T.', tier: 'Active Member', text: 'Finally, a movement that focuses on com
+{ name: 'Zainab M.', tier: 'Supporter', text: 'The free tier gives me everything I need t
+];
+const howItWorks = [
+{ num: '1', title: 'Choose Your Tier', desc: 'Select the membership level that fits your
+{ num: '2', title: 'Fill Your Details', desc: 'Complete your profile with basic informati
+{ num: '3', title: 'Accept Terms', desc: 'Review and accept our terms and conditions' },
+{ num: '4', title: 'Make Payment', desc: 'Complete payment (if applicable) via Squad' },
+{ num: '5', title: 'Join Community', desc: 'Get access to all benefits and community' }
+];
+const selectedTierData = tiers.find(t => t.id === selectedTier);
+// ============ RENDER ============
+return (
+<div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900
+{/* Background Orbs */}
+<div className="fixed inset-0 overflow-hidden pointer-events-none">
+<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/20 rounded-full b
+<div className="absolute top-1/3 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-
+<div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-amber-500/20 rounded-full
+</div>
+<div className="relative z-10">
+{/* ============ NAVIGATION ============ */}
+<nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-sl
+<div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+<div className="text-2xl font-black bg-gradient-to-r from-emerald-400 to-blue-400
+#POMAN
+</div>
+{/* Desktop Menu */}
+<div className="hidden md:flex gap-8 text-sm">
+<a href="#tiers" className="hover:text-emerald-400 transition-colors">Membershi
+<a href="#how" className="hover:text-emerald-400 transition-colors">How It Work
+<a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
+<a href="#contact" className="hover:text-emerald-400 transition-colors">Contact
+</div>
+{/* Mobile Menu Button */}
+<button
+onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+className="md:hidden p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
+aria-label="Toggle menu"
+>
+{mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+</button>
+</div>
+{/* Mobile Menu */}
+{mobileMenuOpen && (
+<div className="md:hidden border-t border-slate-700/50 bg-slate-800/50 p-4 space-
+<a href="#tiers" className="block hover:text-emerald-400 transition-colors">Mem
+<a href="#how" className="block hover:text-emerald-400 transition-colors">How I
+<a href="#faq" className="block hover:text-emerald-400 transition-colors">FAQ</
+<a href="#contact" className="block hover:text-emerald-400 transition-colors">C
+</div>
+)}
+</nav>
+{/* ============ HERO SECTION ============ */}
+<section className="min-h-screen flex items-center justify-center px-4 pt-20 pb-20">
+<div className="max-w-5xl mx-auto text-center">
+<div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-
+<div className="w-full h-full rounded-2xl bg-slate-900 flex items-center justif
+</div>
+<div className="mb-6 inline-block px-4 py-2 rounded-full bg-gradient-to-r from-em
+<span className="text-sm font-semibold tracking-widest">AUTHENTIC NATION MOVEME
+</div>
+<h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-6 tracking-tight" s
+<span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-amber-400 bg
+#POMAN
+</span>
+</h1>
+<p className="text-2xl md:text-3xl text-slate-300 mb-8 max-w-2xl mx-auto leading-
+Join thousands building an <span className="text-emerald-400 font-bold">authent
+</p>
+<button
+onClick={() => {
+document.getElementById('tiers-section').scrollIntoView({ behavior: 'smooth'
+setMobileMenuOpen(false);
+}}
+className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emera
+style={{animation: 'fadeInUp 0.8s ease-out 0.4s both'}}
+>
+Explore Membership <ChevronDown size={20} />
+</button>
+</div>
+</section>
+{/* ============ MISSION & VALUES ============ */}
+<section className="py-20 px-4 bg-gradient-to-b from-transparent to-emerald-500/5">
+<div className="max-w-6xl mx-auto">
+<div className="mb-20">
+<div className="text-center mb-12">
+<h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">
+<span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text
+Our Mission
+</span>
+</h2>
+</div>
+<div className="bg-gradient-to-br from-emerald-500/10 to-blue-500/10 border bor
+<p className="text-2xl md:text-3xl text-white font-bold leading-relaxed max-w
+To build a movement for <span className="text-emerald-400">good governance<
+</p>
+</div>
+</div>
+<div className="mb-20">
+<h2 className="text-4xl md:text-5xl font-black mb-12 text-center tracking-tight
+<span className="bg-gradient-to-r from-blue-400 to-amber-400 bg-clip-text tex
+Our Values
+</span>
+</h2>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+{[
+{ title: 'Authenticity', subtitle: 'Real change', icon: '✓', color: 'from-e
+{ title: 'Competence', subtitle: 'Merit-based', icon: ' ', color: 'from-bl
+{ title: 'Accountability', subtitle: 'Transparency', icon: ' ', color: 'fr
+{ title: 'Nation-Building', subtitle: 'Beyond elections', icon: ' ', color
+{ title: 'Grassroots Power', subtitle: 'Bottom-up', icon: ' ', color: 'fro
+].map((value, i) => (
+<div
+key={i}
+className="p-6 rounded-2xl bg-gradient-to-br from-slate-700/50 to-slate-8
+style={{animation: `fadeInUp 0.8s ease-out ${0.6 + i * 0.08}s both`}}
+>
+<div className={`text-4xl mb-3 bg-gradient-to-br ${value.color} bg-clip-t
+<h3 className="text-lg font-bold text-white mb-2">{value.title}</h3>
+<p className="text-sm text-slate-400">{value.subtitle}</p>
+</div>
+))}
+</div>
+</div>
+</div>
+</section>
+{/* ============ HOW IT WORKS ============ */}
+<section id="how" className="py-20 px-4">
+<div className="max-w-6xl mx-auto">
+<h2 className="text-4xl md:text-5xl font-black mb-16 text-center tracking-tight">
+<span className="bg-gradient-to-r from-violet-400 to-emerald-400 bg-clip-text t
+How It Works
+</span>
+</h2>
+<div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+{howItWorks.map((step, i) => (
+<div key={i} className="relative">
+<div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 border
+<div className="w-12 h-12 rounded-full bg-gradient-to-r from-violet-500 t
+{step.num}
+</div>
+<h3 className="font-bold mb-2 text-white">{step.title}</h3>
+<p className="text-sm text-slate-400">{step.desc}</p>
+</div>
+{i < howItWorks.length - 1 && (
+<div className="hidden md:block absolute top-1/3 -right-2 w-4 h-0.5 bg-gr
+)}
+</div>
+))}
+</div>
+</div>
+</section>
+{/* ============ TIERS SECTION ============ */}
+<section id="tiers-section" className="py-20 px-4">
+<div className="max-w-7xl mx-auto">
+<div className="text-center mb-16">
+<h2 className="text-5xl md:text-6xl font-black mb-4 tracking-tight">
+<span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text t
+Choose Your Role
+</span>
+</h2>
+<p className="text-xl text-slate-400 max-w-2xl mx-auto">Every level of commitme
+</div>
+{selectedTier ? (
+// FORM VIEW
+<div className="max-w-2xl mx-auto">
+<div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 rounded-3
+<div className="text-center mb-8">
+<div className="text-5xl mb-4">{selectedTierData.icon}</div>
+<h3 className="text-3xl font-bold mb-2">{selectedTierData.name}</h3>
+<button
+onClick={() => {
+setSelectedTier(null);
+setFormStep(1);
+setErrors({});
+setTermsAccepted(false);
+}}
+className="text-slate-400 hover:text-emerald-400 transition-colors text
+>
+← Back to tiers
+</button>
+</div>
+{/* Form Progress */}
+<div className="flex gap-2 mb-8 justify-center">
+{[1, 2, 3].map(step => (
+<div key={step} className={`h-2 flex-1 rounded-full transition-all ${fo
+))}
+</div>
+{!isSubmitted ? (
+<form onSubmit={handleSubmit} className="space-y-6">
+{/* FOUNDER APPLICATION FORM */}
+{selectedTierData.id === 'founder' && (
+<>
+<h4 className="text-2xl font-bold mb-6 text-yellow-400"> Founder
+<p className="text-slate-400 text-sm mb-6">Only 100 positions avail
+</>
+)}
+{/* STEP 1 */}
+{(formStep === 1 || formStep === 2 || formStep === 3) && (
+<div className="space-y-6 animate-fade-in">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb
+Full Name <span className="text-red-400">*</span>
+</label>
+<input
+type="text"
+name="fullName"
+value={formData.fullName}
+onChange={handleInputChange}
+placeholder="Your name"
+className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 borde
+aria-label="Full Name"
+/>
+{errors.fullName && <p className="text-red-400 text-xs mt-1">{e
+</div>
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb
+Email <span className="text-red-400">*</span>
+</label>
+<input
+type="email"
+name="email"
+value={formData.email}
+onChange={handleInputChange}
+placeholder="your@email.com"
+className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 borde
+aria-label="Email"
+/>
+{errors.email && <p className="text-red-400 text-xs mt-1">{erro
+</div>
+</div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb
+Phone <span className="text-red-400">*</span>
+</label>
+<input
+type="tel"
+name="phone"
+value={formData.phone}
+onChange={handleInputChange}
+placeholder="+234..."
+className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 borde
+aria-label="Phone"
+/>
+{errors.phone && <p className="text-red-400 text-xs mt-1">{erro
+</div>
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb
+State <span className="text-red-400">*</span>
+</label>
+<input
+type="text"
+name="state"
+value={formData.state}
+onChange={handleInputChange}
+placeholder="Your state"
+className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 borde
+aria-label="State"
+/>
+{errors.state && <p className="text-red-400 text-xs mt-1">{erro
+</div>
+</div>
+{formStep === 1 && (
+<button
+type="button"
+onClick={() => {
+if (formData.fullName && formData.email && formData.phone &&
+setFormStep(2);
+} else {
+setErrors({
+fullName: !formData.fullName ? 'Required' : '',
+email: !formData.email ? 'Required' : '',
+phone: !formData.phone ? 'Required' : '',
+state: !formData.state ? 'Required' : ''
+});
+}
+}}
+className="w-full py-3 rounded-lg bg-gradient-to-r from-emerald
+>
+Continue to Step 2
+</button>
+)}
+</div>
+)}
+{/* STEP 2 */}
+{(formStep === 2 || formStep === 3) && (
+<div className="space-y-6 animate-fade-in">
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb-2
+What interests you? <span className="text-red-400">*</span>
+</label>
+<select
+name="interest"
+value={formData.interest}
+onChange={handleInputChange}
+className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 border
+aria-label="Area of Interest"
+>
+<option value="">Select an interest...</option>
+{interests.map(interest => (
+<option key={interest} value={interest}>{interest}</option>
+))}
+</select>
+{errors.interest && <p className="text-red-400 text-xs mt-1">{err
+</div>
+{selectedTierData.id === 'founder' && (
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb
+Why do you want to be a Founder Member? <span className="text
+</label>
+<textarea
+name="message"
+value={formData.message}
+onChange={handleInputChange}
+placeholder="Tell us about your vision, experience, and commi
+rows="5"
+className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 borde
+aria-label="Message"
+/>
+{errors.message && <p className="text-red-400 text-xs mt-1">{er
+</div>
+)}
+{/* TERMS & CONDITIONS */}
+<div className="bg-blue-500/10 border border-blue-500/30 rounded-lg
+<div className="flex gap-3 items-start">
+<input
+type="checkbox"
+id="terms"
+checked={termsAccepted}
+onChange={(e) => setTermsAccepted(e.target.checked)}
+className="mt-1 w-5 h-5 cursor-pointer"
+aria-label="Accept terms and conditions"
+/>
+<label htmlFor="terms" className="text-sm text-slate-300 cursor
+I agree to the{' '}
+<button
+type="button"
+onClick={() => setShowTerms(true)}
+className="text-blue-400 hover:text-blue-300 underline"
+>
+terms and conditions
+</button>
+</label>
+</div>
+{errors.terms && <p className="text-red-400 text-xs mt-2">{errors
+</div>
+<div className="flex gap-4">
+<button
+type="button"
+onClick={() => setFormStep(1)}
+className="flex-1 py-3 rounded-lg border border-slate-600 hover
+>
+Back
+</button>
+<button
+type="submit"
+disabled={loading}
+className="flex-1 py-3 rounded-lg bg-gradient-to-r from-emerald
+>
+{loading ? 'Submitting...' : selectedTierData.id === 'founder'
+</button>
+</div>
+</div>
+)}
+{errors.submit && (
+<div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4
+{errors.submit}
+</div>
+)}
+</form>
+) : (
+// SUCCESS SCREEN
+<div className="text-center space-y-6 animate-fade-in">
+<div className="text-6xl"> </div>
+<h4 className="text-3xl font-bold">Welcome to #POMAN!</h4>
+<p className="text-slate-400 text-lg">
+Thank you, <span className="text-emerald-400 font-semibold">{formData
+</p>
+{/* EMAIL CONFIRMATION */}
+<div className="bg-emerald-500/10 border border-emerald-500/30 rounded-
+<p className="text-emerald-400 font-semibold mb-2"> Check Your Emai
+<p className="text-slate-400 text-sm">
+Confirmation sent to <span className="text-white font-semibold">{fo
+</p>
+<p className="text-slate-500 text-xs mt-2"> Check spam if you don't
+</div>
+{/* SUCCESS SUMMARY */}
+<div className="bg-slate-800/50 border border-slate-600/50 rounded-xl p
+<p className="font-bold text-emerald-400 mb-4">✓ Your Details:</p>
+<div className="space-y-2 text-sm text-slate-400">
+<p><strong>Name:</strong> {formData.fullName}</p>
+<p><strong>Email:</strong> {formData.email}</p>
+<p><strong>Tier:</strong> {selectedTierData.name}</p>
+<p><strong>Referral Code:</strong> <span className="font-mono text-
+</div>
+</div>
+{/* PAYMENT / NEXT STEPS */}
+{selectedTierData.id === 'founder' ? (
+<div className="bg-yellow-500/10 border border-yellow-500/30 rounded-
+<p className="text-yellow-400 font-bold text-xl mb-4"> Applicatio
+<ol className="text-slate-300 text-sm space-y-2 text-left mb-6">
+<li><strong>1.</strong> Application review (48 hours)</li>
+<li><strong>2.</strong> Leadership interview (30 min call)</li>
+<li><strong>3.</strong> Review Founder Agreement</li>
+<li><strong>4.</strong> Complete payment (₦1,500,000)</li>
+<li><strong>5.</strong> Immediate benefits access</li>
+</ol>
+<p className="text-slate-400 text-sm">Contact at: <span className="
+</div>
+) : selectedTierData.id !== 'supporter' ? (
+<a
+href={selectedTierData.squadLink}
+target="_blank"
+rel="noopener noreferrer"
+className="block w-full py-4 px-8 rounded-lg bg-gradient-to-r from-
+>
+Complete Payment on Squad
+</a>
+) : (
+<div className="bg-green-500/10 border border-green-500/30 rounded-xl
+<p className="text-green-400 font-semibold">✓ All Set!</p>
+<p className="text-slate-400 text-sm mt-2">Join our WhatsApp commun
+</div>
+)}
+{/* SHARE */}
+<button
+onClick={() => setShowShareModal(true)}
+className="w-full py-3 rounded-lg border border-slate-600 hover:borde
+>
+<Share2 size={18} /> Invite Others
+</button>
+<button
+onClick={() => {
+setSelectedTier(null);
+setFormData({ fullName: '', email: '', phone: '', state: '', intere
+setIsSubmitted(false);
+setFormStep(1);
+setErrors({});
+setTermsAccepted(false);
+}}
+className="w-full py-3 rounded-lg border border-slate-600 hover:borde
+>
+Join Different Tier
+</button>
+</div>
+)}
+</div>
+</div>
+) : (
+// TIERS GRID
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+{tiers.map((tier, i) => (
+<div
+key={tier.id}
+className="group relative"
+style={{animation: `fadeInUp 0.8s ease-out ${0.5 + i * 0.1}s both`}}
+>
+{tier.popular && (
+<div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+<span className="px-4 py-1 bg-gradient-to-r from-amber-500 to-orange-
+MOST POPULAR
+</span>
+</div>
+)}
+{tier.limited && (
+<div className="absolute -top-4 right-4 z-20">
+<span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-amber-
+LIMITED 100
+</span>
+</div>
+)}
+<div
+onClick={() => {
+setSelectedTier(tier.id);
+setFormStep(1);
+setErrors({});
+}}
+className={`h-full p-8 rounded-2xl cursor-pointer transition-all durati
+tier.popular
+? 'bg-gradient-to-br from-slate-600/80 to-slate-700/50 border-2 bor
+: 'bg-gradient-to-br from-slate-700/50 to-slate-800/50 border borde
+}`}
+>
+<div className="text-5xl mb-4">{tier.icon}</div>
+<h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
+<p className="text-slate-400 text-sm mb-4">{tier.description}</p>
+<div className="mb-6">
+<div className={`text-3xl font-black bg-gradient-to-r ${tier.accent}
+{tier.price}
+</div>
+{tier.period && <div className="text-slate-500 text-sm">{tier.period}
+</div>
+<ul className="space-y-3 mb-8">
+{tier.features.map((feature, j) => (
+<li key={j} className="flex items-start gap-3 text-sm text-slate-30
+<Check size={16} className="text-emerald-400 mt-0.5 flex-shrink-0
+<span>{feature}</span>
+</li>
+))}
+</ul>
+<button className={`w-full py-3 rounded-lg font-bold transition-all ${t
+{tier.cta}
+</button>
+</div>
+</div>
+))}
+</div>
+)}
+</div>
+</section>
+{/* ============ TESTIMONIALS ============ */}
+<section className="py-20 px-4">
+<div className="max-w-6xl mx-auto">
+<h2 className="text-4xl md:text-5xl font-black mb-16 text-center tracking-tight">
+<span className="bg-gradient-to-r from-pink-400 to-emerald-400 bg-clip-text tex
+What Members Say
+</span>
+</h2>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+{testimonials.map((testimonial, i) => (
+<div
+key={i}
+className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 border borde
+style={{animation: `fadeInUp 0.8s ease-out ${0.6 + i * 0.1}s both`}}
+>
+<p className="text-slate-300 text-lg mb-6 italic">"{testimonial.text}"</p>
+<div>
+<p className="font-bold text-white">{testimonial.name}</p>
+<p className="text-sm text-emerald-400">{testimonial.tier}</p>
+</div>
+</div>
+))}
+</div>
+</div>
+</section>
+{/* ============ REFERRAL BADGE SYSTEM ============ */}
+<section className="py-20 px-4">
+<div className="max-w-7xl mx-auto">
+<h2 className="text-4xl md:text-5xl font-black mb-6 text-center tracking-tight">
+<span className="bg-gradient-to-r from-purple-400 to-emerald-400 bg-clip-text t
+Earn Badges & Rewards
+</span>
+</h2>
+<p className="text-xl text-slate-400 max-w-3xl mx-auto text-center mb-16">
+Invite others and unlock exclusive badges, leadership roles, and incredible ben
+</p>
+{/* POINTS SYSTEM EXPLAINER */}
+<div className="mb-16">
+<h3 className="text-2xl font-bold mb-8 text-center"> How Points Work</h3>
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+{referralPointSystem.map((item, i) => (
+<div key={i} className="bg-gradient-to-br from-slate-700/50 to-slate-800/50
+<div className="text-4xl mb-3">{item.icon}</div>
+<p className="font-bold text-white mb-2">{item.tier}</p>
+<p className={`text-2xl font-black ${item.color}`}>{item.points} {item.po
+</div>
+))}
+</div>
+<p className="text-center text-slate-400 text-sm mt-6">Each tier you refer earn
+</div>
+{/* BADGE TIERS */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+{Object.entries(badgeSystem).map(([key, badge], i) => (
+<div
+key={key}
+className={`border rounded-2xl p-8 transition-all hover:border-emerald-500/
+key === 'legendary'
+? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-50
+: 'bg-gradient-to-br from-slate-700/50 to-slate-800/50 border-slate-600
+}`}
+style={{animation: `fadeInUp 0.8s ease-out ${0.5 + i * 0.15}s both`}}
+>
+{/* Badge Header */}
+<div className="flex items-start justify-between mb-6">
+<div>
+<div className={`text-5xl mb-3 bg-gradient-to-br ${badge.color} bg-clip
+{badge.icon}
+</div>
+<h3 className="text-2xl font-bold text-white mb-1">{badge.name}</h3>
+<p className={`text-sm font-semibold bg-gradient-to-r ${badge.color} bg
+{badge.points} points
+</p>
+</div>
+</div>
+{/* Requirements */}
+<div className="bg-slate-800/50 rounded-lg p-4 mb-6 border border-slate-600
+<p className="text-xs font-bold text-slate-400 mb-2">REQUIREMENTS</p>
+<p className="text-white">{badge.requirements}</p>
+</div>
+{/* Benefits */}
+<div>
+<p className="text-xs font-bold text-slate-400 mb-4">UNLOCK BENEFITS:</p>
+<ul className="space-y-3">
+{badge.benefits.map((benefit, j) => (
+<li key={j} className="flex items-start gap-3 text-sm text-slate-300"
+<Check size={16} className={`bg-gradient-to-br ${badge.color} bg-cl
+<span>{benefit}</span>
+</li>
+))}
+</ul>
+</div>
+{/* Special Note for Legendary */}
+{key === 'legendary' && (
+<div className="mt-6 pt-6 border-t border-purple-500/30">
+<p className="text-xs font-bold text-purple-400 mb-2"> EXCLUSIVE</p>
+<p className="text-sm text-purple-300">Join the most exclusive circle i
+</div>
+)}
+</div>
+))}
+</div>
+{/* VISUAL PROGRESSION */}
+<div className="mt-16 p-8 bg-gradient-to-r from-slate-700/50 to-slate-800/50 bord
+<h3 className="text-xl font-bold mb-6 text-center"> Your Referral Journey</h3
+<div className="flex flex-col md:flex-row items-center justify-between gap-4 te
+<div className="flex-1">
+<div className="text-3xl mb-2"> </div>
+<p className="font-bold text-white">Start</p>
+<p className="text-xs text-slate-400">0 points</p>
+</div>
+<div className="text-2xl text-slate-400">→</div>
+<div className="flex-1">
+<div className="text-3xl mb-2"> </div>
+<p className="font-bold text-white">Builder</p>
+<p className="text-xs text-slate-400">10 points</p>
+</div>
+<div className="text-2xl text-slate-400">→</div>
+<div className="flex-1">
+<div className="text-3xl mb-2"> </div>
+<p className="font-bold text-white">Champion</p>
+<p className="text-xs text-slate-400">50 points</p>
+</div>
+<div className="text-2xl text-slate-400">→</div>
+<div className="flex-1">
+<div className="text-3xl mb-2"> </div>
+<p className="font-bold text-white">Elite</p>
+<p className="text-xs text-slate-400">100 points</p>
+</div>
+<div className="text-2xl text-slate-400">→</div>
+<div className="flex-1">
+<div className="text-3xl mb-2"> </div>
+<p className="font-bold text-white">Legendary</p>
+<p className="text-xs text-slate-400">250+ points</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+{/* ============ FAQ ============ */}
+<section id="faq" className="py-20 px-4">
+<div className="max-w-3xl mx-auto">
+<h2 className="text-4xl md:text-5xl font-black mb-16 text-center tracking-tight">
+<span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text tex
+Frequently Asked Questions
+</span>
+</h2>
+<div className="space-y-4">
+{faqs.map((faq, i) => (
+<div
+key={i}
+className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 border borde
+>
+<button
+onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+className="w-full p-6 flex justify-between items-center font-bold text-wh
+aria-label={`Toggle FAQ item ${i + 1}`}
+>
+<span className="flex items-center gap-3">
+<HelpCircle size={20} className="text-cyan-400" />
+{faq.q}
+</span>
+<span className={`transition-transform ${expandedFaq === i ? 'rotate-180'
+<ChevronDown size={20} />
+</span>
+</button>
+{expandedFaq === i && (
+<div className="px-6 pb-6 text-slate-400 border-t border-slate-600/50">
+{faq.a}
+</div>
+)}
+</div>
+))}
+</div>
+</div>
+</section>
+{/* ============ FOOTER ============ */}
+<footer id="contact" className="border-t border-slate-700/50 py-16 px-4 bg-gradient-t
+<div className="max-w-6xl mx-auto">
+<div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+{/* About */}
+<div>
+<h3 className="text-lg font-bold mb-4">#POMAN</h3>
+<p className="text-slate-400 text-sm">Movement for an Authentic Nation. Build
+</div>
+{/* Quick Links */}
+<div>
+<h4 className="font-bold mb-4">Quick Links</h4>
+<ul className="space-y-2 text-sm text-slate-400">
+<li><a href="#tiers" className="hover:text-emerald-400 transition-colors">M
+<li><a href="#how" className="hover:text-emerald-400 transition-colors">How
+<li><a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ
+<li><a href="#" className="hover:text-emerald-400 transition-colors">Privac
+<li><a href="#" className="hover:text-emerald-400 transition-colors">Terms
+</ul>
+</div>
+{/* Contact */}
+<div>
+<h4 className="font-bold mb-4">Contact Us</h4>
+<ul className="space-y-2 text-sm text-slate-400">
+<li className="flex items-center gap-2">
+<Mail size={16} className="text-emerald-400" />
+<a href="mailto:pomanmovement@proton.me" className="hover:text-emerald-40
+</li>
+<li className="flex items-center gap-2">
+<Phone size={16} className="text-emerald-400" />
+<a href="https://wa.me/2347026615694" target="_blank" rel="noopener noref
+</li>
+<li className="flex items-center gap-2">
+<MapPin size={16} className="text-emerald-400" />
+<span>Lagos, Nigeria</span>
+</li>
+</ul>
+</div>
+{/* Social Media */}
+<div>
+<h4 className="font-bold mb-4">Follow Us</h4>
+<div className="flex gap-4">
+<a href="https://facebook.com/POMANOrigin" target="_blank" rel="noopener no
+<Facebook size={20} className="text-blue-400" />
+</a>
+<a href="https://twitter.com/POMANOrigin" target="_blank" rel="noopener nor
+<Twitter size={20} className="text-cyan-400" />
+</a>
+<a href="https://instagram.com/POMANOrigin" target="_blank" rel="noopener n
+<span className="text-pink-400 font-bold"> </span>
+</a>
+<a href="https://wa.me/POMANOrigin" className="p-3 bg-slate-700/50 rounded-
+<MessageCircle size={20} className="text-green-400" />
+</a>
+</div>
+</div>
+</div>
+<div className="border-t border-slate-700/50 pt-8 text-center text-slate-400 text
+<p>© 2024 #POMAN - Building Authentic Nigeria | All Rights Reserved</p>
+<p className="mt-2">Made with for authentic nation-building</p>
+</div>
+</div>
+</footer>
+{/* ============ TERMS MODAL ============ */}
+{showTerms && (
+<div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center j
+<div className="bg-slate-800 rounded-2xl max-w-2xl w-full max-h-96 overflow-y-aut
+<div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex ju
+<h3 className="text-2xl font-bold">Terms & Conditions</h3>
+<button onClick={() => setShowTerms(false)} className="p-2 hover:bg-slate-700
+<X size={24} />
+</button>
+</div>
+<div className="p-6 text-slate-300 space-y-4 text-sm">
+<p><strong>1. Membership Agreement</strong><br/>By joining #POMAN, you agree
+<p><strong>2. Payment Terms</strong><br/>All payments are non-refundable unle
+<p><strong>3. Code of Conduct</strong><br/>Members agree to communicate respe
+<p><strong>4. Data Privacy</strong><br/>Your personal information will be use
+<p><strong>5. Termination</strong><br/>Membership can be terminated at any ti
+<p><strong>6. Changes to Terms</strong><br/>We reserve the right to update th
+</div>
+<div className="border-t border-slate-700 p-6 flex gap-4">
+<button onClick={() => setShowTerms(false)} className="flex-1 py-3 rounded-lg
+Close
+</button>
+<button onClick={() => { setShowTerms(false); setTermsAccepted(true); }} clas
+Accept
+</button>
+</div>
+</div>
+</div>
+)}
+{/* ============ SHARE MODAL ============ */}
+{showShareModal && (
+<div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center j
+<div className="bg-slate-800 rounded-2xl max-w-md w-full p-8">
+<div className="flex justify-between items-center mb-6">
+<h3 className="text-2xl font-bold"> Invite & Earn Badges</h3>
+<button onClick={() => setShowShareModal(false)} className="p-2 hover:bg-slat
+<X size={24} />
+</button>
+</div>
+<p className="text-slate-300 mb-6">Share your referral code. Each person you in
+{/* REFERRAL CODE */}
+<div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border bord
+<p className="text-xs font-bold text-emerald-400 mb-2">YOUR REFERRAL CODE</p>
+<div className="flex items-center justify-between">
+<code className="font-mono font-bold text-emerald-400 text-lg">{referralCod
+<button
+onClick={() => {
+navigator.clipboard.writeText(referralCode);
+alert('✓ Referral code copied!');
+}}
+className="p-2 hover:bg-slate-600 rounded transition-colors"
+aria-label="Copy referral code"
+>
+<Copy size={20} />
+</button>
+</div>
+</div>
+{/* POINT SYSTEM */}
+<div className="bg-slate-700/50 border border-slate-600/50 rounded-lg p-4 mb-6"
+<p className="text-xs font-bold text-slate-400 mb-3">POINTS YOU EARN</p>
+<div className="space-y-2 text-sm">
+<div className="flex justify-between">
+<span className="text-slate-300">Per Supporter referred</span>
+<span className="text-emerald-400 font-bold">1 point</span>
+</div>
+<div className="flex justify-between">
+<span className="text-slate-300">Per Active Member</span>
+<span className="text-blue-400 font-bold">10 points</span>
+</div>
+<div className="flex justify-between">
+<span className="text-slate-300">Per Ambassador</span>
+<span className="text-amber-400 font-bold">25 points</span>
+</div>
+<div className="flex justify-between">
+<span className="text-slate-300">Per Founder</span>
+<span className="text-yellow-400 font-bold">50 points</span>
+</div>
+</div>
+</div>
+{/* FIRST BADGE MILESTONE */}
+<div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border bor
+<p className="text-xs font-bold text-emerald-400 mb-2"> FIRST BADGE: Commun
+<p className="text-sm text-slate-300">Get 10 points to unlock your first badg
+</div>
+{/* SHARE BUTTONS */}
+<div className="space-y-3 mb-6">
+<p className="text-sm text-slate-400 text-center font-semibold">Share your co
+<div className="flex gap-3">
+<a
+href={`https://facebook.com/sharer/sharer.php?u=pomanmovement.ng&quote=Jo
+target="_blank"
+rel="noopener noreferrer"
+className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold
+>
+Facebook
+</a>
+<a
+href={`https://twitter.com/intent/tweet?text=Join%20%23POMAN%20with%20my%
+target="_blank"
+rel="noopener noreferrer"
+className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 rounded-lg font-bold
+>
+Twitter
+</a>
+<a
+href={`https://wa.me/?text=Join%20%23POMAN%20with%20my%20referral%20code%
+target="_blank"
+rel="noopener noreferrer"
+className="flex-1 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bo
+>
+WhatsApp
+</a>
+</div>
+</div>
+<button onClick={() => setShowShareModal(false)} className="w-full py-3 rounded
+Close
+</button>
+</div>
+</div>
+)}
+{/* ============ ADMIN PANEL (Password Protected) ============ */}
+{showAdminPanel && (
+<div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center j
+<div className="bg-slate-800 rounded-2xl max-w-md w-full overflow-hidden">
+{!adminAuthenticated ? (
+// PASSWORD LOGIN SCREEN
+<div>
+<div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-cent
+<h3 className="text-2xl font-bold"> Admin Access</h3>
+<p className="text-emerald-100 text-sm mt-2">Enter your admin password</p
+</div>
+<form onSubmit={handleAdminLogin} className="p-8 space-y-6">
+<div>
+<label className="block text-sm font-semibold text-slate-300 mb-3">Admi
+<input
+type="password"
+value={adminPasswordInput}
+onChange={(e) => setAdminPasswordInput(e.target.value)}
+placeholder="Enter password"
+className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-
+autoFocus
+/>
+</div>
+<button
+type="submit"
+className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 te
+>
+Unlock Admin Panel
+</button>
+<button
+type="button"
+onClick={() => {
+setShowAdminPanel(false);
+setAdminPasswordInput('');
+}}
+className="w-full py-3 border border-slate-600 hover:border-slate-500 f
+>
+Cancel
+</button>
+</form>
+</div>
+) : (
+// ADMIN DASHBOARD
+<div>
+<div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 flex just
+<h3 className="text-2xl font-bold"> Admin Dashboard</h3>
+<button onClick={handleAdminLogout} className="p-2 hover:bg-slate-700 rou
+<X size={24} />
+</button>
+</div>
+<div className="p-6 space-y-6 max-h-96 overflow-y-auto">
+{/* STATS */}
+<div className="grid grid-cols-3 gap-4">
+<div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 bo
+<div className="text-3xl font-bold text-emerald-400">{members.length}
+<div className="text-xs text-slate-400">Total Members</div>
+</div>
+<div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 bor
+<div className="text-3xl font-bold text-blue-400">{members.filter(m =
+<div className="text-xs text-slate-400">Ambassadors</div>
+</div>
+<div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 bo
+<div className="text-3xl font-bold text-amber-400">₦{(members.filter(
+<div className="text-xs text-slate-400">Revenue</div>
+</div>
+</div>
+{/* MEMBERS TABLE */}
+<div>
+<h4 className="font-bold mb-3 text-white">Recent Signups</h4>
+{members.length === 0 ? (
+<p className="text-slate-400 text-sm text-center py-4">No signups yet
+) : (
+<div className="space-y-2 max-h-40 overflow-y-auto">
+{members.slice(-5).reverse().map(member => (
+<div key={member.id} className="bg-slate-700/50 border border-sla
+<div className="flex justify-between">
+<span className="font-semibold text-white">{member.fullName}<
+<span className="text-emerald-400 text-xs">{member.tier}</spa
+</div>
+<div className="text-slate-400 text-xs">{member.email}</div>
+<div className="text-slate-500 text-xs mt-1">{member.date}</div
+</div>
+))}
+</div>
+)}
+</div>
+{/* EXPORT */}
+<div className="flex gap-3">
+<button
+onClick={() => {
+const csv = ['Full Name,Email,Tier,Date'].concat(members.map(m => `
+const blob = new Blob([csv], { type: 'text/csv' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `poman-members-${new Date().toLocaleDateString()}.csv`
+a.click();
+}}
+className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 rounded fo
+>
+<Download size={16} /> Export CSV
+</button>
+<button
+onClick={handleAdminLogout}
+className="flex-1 py-2 rounded border border-slate-600 hover:border-s
+>
+Logout
+</button>
+</div>
+</div>
+</div>
+)}
+</div>
+</div>
+)}
+</div>
+{/* ============ KEYBOARD SHORTCUT ============ */}
+<script>{`
+document.addEventListener('keydown', (e) => {
+if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
+document.querySelector('[data-admin]')?.click?.();
+}
+});
+`}</script>
+<style>{`
+html {
+scroll-behavior: smooth;
+}
+@keyframes fadeInUp {
+from {
+opacity: 0;
+transform: translateY(30px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+@keyframes fadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+.animate-fade-in {
+animation: fadeIn 0.6s ease-out;
+}
+* {
+scrollbar-width: thin;
+scrollbar-color: rgb(71 85 105 / 0.5) transparent;
+}
+*::-webkit-scrollbar {
+width: 8px;
+}
+*::-webkit-scrollbar-track {
+background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+background: rgb(71 85 105 / 0.5);
+border-radius: 4px;
+}
+`}</style>
+</div>
+);
+}
